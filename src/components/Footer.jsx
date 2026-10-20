@@ -7,10 +7,9 @@ export default function Footer() {
       <div className="shell">
         <div className="footer-inner">
           <div className="footer-brand">
-            <strong>🎬 CREATE 모형 연구학교 홍보영상관</strong>
+            <strong>2026 교육부 요청 전북특별자치도교육청지정 AI 디지털 활용 연구학교 군산초등학교</strong>
             <p>
-              CREATE 모형(Connect · Recognize · Explore · Apply · Transform · Evaluate)을 바탕으로
-              생각을 잇고 배움을 창조하는 미래 교육의 실천 여정과 성과를 영상으로 공유합니다.
+              수업의 성장과 배움의 나눔을 위한 성과 공유 공간
             </p>
           </div>
 

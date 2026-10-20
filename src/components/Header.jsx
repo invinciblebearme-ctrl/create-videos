@@ -11,17 +11,24 @@ export default function Header({ onOpenManage }) {
 
   return (
     <header className="site-header shell">
-      <button 
+      <a 
+        href="https://create.allforedu.kr" 
         className="brand" 
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        aria-label="최상단으로 이동"
+        title="AI DIGITAL RESEARCH SCHOOL 메인 플랫폼으로 이동"
       >
-        <span className="brand-icon">🎬</span>
-        <span className="brand-text">
-          <strong>CREATE 홍보영상관</strong>
-          <small>AI DIGITAL RESEARCH SCHOOL</small>
+        <span className="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+            <line x1="12" y1="2.5" x2="12" y2="21.5" />
+            <line x1="2.5" y1="12" x2="21.5" y2="12" />
+            <line x1="5.28" y1="5.28" x2="18.72" y2="18.72" />
+            <line x1="5.28" y1="18.72" x2="18.72" y2="5.28" />
+          </svg>
         </span>
-      </button>
+        <span className="brand-text">
+          <strong>AI DIGITAL</strong>
+          <small>RESEARCH SCHOOL</small>
+        </span>
+      </a>
 
       <nav className={`header-nav ${menuOpen ? 'open' : ''}`} aria-label="메인 메뉴">
         <a 

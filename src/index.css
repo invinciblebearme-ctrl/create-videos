@@ -105,21 +105,24 @@ body {
   border: none;
   cursor: pointer;
   padding: 0;
+  color: #27406f;
+  text-align: left;
 }
 
 .brand-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #687fe0 0%, #896be0 100%);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #ebf1fe;
   display: grid;
   place-items: center;
-  font-size: 22px;
-  box-shadow: 0 4px 14px rgba(104, 127, 224, 0.35);
+  color: #557cd9;
+  box-shadow: 0 3px 10px rgba(85, 124, 217, 0.12);
   transition: transform 0.2s ease;
+  flex-shrink: 0;
 }
 .brand:hover .brand-icon {
-  transform: rotate(-6deg) scale(1.06);
+  transform: rotate(15deg) scale(1.04);
 }
 
 .brand-text {
@@ -128,16 +131,21 @@ body {
   text-align: left;
 }
 .brand-text strong {
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  color: #2b3952;
+  font-size: 18px;
+  display: block;
+  line-height: 1.15;
+  letter-spacing: 0.6px;
+  font-weight: 800;
+  color: #27406f;
 }
 .brand-text small {
-  font-size: 10.5px;
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 2.2px;
+  color: #7b90b2;
+  margin-top: 3px;
   font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #798aa6;
+  text-transform: uppercase;
 }
 
 .header-nav {
@@ -1263,11 +1271,13 @@ body {
   font-weight: 900;
   color: #1e293b;
   margin-bottom: 6px;
+  line-height: 1.4;
 }
 .footer-brand p {
   font-size: 12.5px;
   color: #64748b;
-  max-width: 440px;
+  max-width: 540px;
+  line-height: 1.6;
 }
 .footer-links {
   display: flex;
