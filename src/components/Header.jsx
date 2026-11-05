@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Video, ExternalLink, Settings, Menu, X, BookOpen, Home } from 'lucide-react';
+import { Video, ExternalLink, Settings, Menu, X, BookOpen, Home, Layers } from 'lucide-react';
 
-export default function Header({ onOpenManage }) {
+export default function Header({ onOpenManage, onOpenModelGuide }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const scrollToSection = (id) => {
@@ -46,6 +46,17 @@ export default function Header({ onOpenManage }) {
           onClick={() => scrollToSection('video-library')}
         >
           <Video size={15} /> 영상 아카이브
+        </button>
+
+        <button 
+          className="nav-link"
+          onClick={() => {
+            onOpenModelGuide?.();
+            setMenuOpen(false);
+          }}
+          title="CREATE 6단계 모형 한눈에 보기 & 환류 체계"
+        >
+          <Layers size={15} /> CREATE 6단계
         </button>
 
         <a

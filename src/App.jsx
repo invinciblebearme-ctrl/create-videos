@@ -5,20 +5,34 @@ import SpotlightVideo from './components/SpotlightVideo';
 import VideoGrid from './components/VideoGrid';
 import VideoPlayerModal from './components/VideoPlayerModal';
 import VideoManageModal from './components/VideoManageModal';
+import CreateModelModal from './components/CreateModelModal';
 import GuideFloatingWidget from './components/GuideFloatingWidget';
 import Footer from './components/Footer';
 import { INITIAL_VIDEOS, CATEGORIES } from './data/initialVideos';
 
-const STORAGE_KEY = 'create_videos_list_v1';
+const STORAGE_KEY = 'create_videos_list_v2';
 
 export default function App() {
   const [videos, setVideos] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      let saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        // Fallback check v1 and migrate
+        saved = localStorage.getItem('create_videos_list_v1');
+      }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Automatically migrate any items containing the old Connect text
+          return parsed.map(v => {
+            if (v.id === 'create-promo-01' && v.description && v.description.includes('Connect')) {
+              return { ...v, description: INITIAL_VIDEOS[0].description };
+            }
+            if (v.id === 'create-shorts-05' && v.description && v.description.includes('Connect')) {
+              return { ...v, description: INITIAL_VIDEOS[4].description };
+            }
+            return v;
+          });
         }
       }
     } catch (e) {
@@ -30,6 +44,7 @@ export default function App() {
   const [selectedVideoForPlay, setSelectedVideoForPlay] = useState(null);
   const [selectedVideoForEdit, setSelectedVideoForEdit] = useState(null);
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   // Persist to localStorage whenever videos change
@@ -66,24 +81,26 @@ export default function App() {
   };
 
   const handleOpenManageGeneral = () => {
-    setSelectedVideoForEdit(videos[0] || null);
+    setSelectedVideoForEdit(null);
     setIsManageModalOpen(true);
   };
 
-  const handleShare = (video) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('video', video.id);
-    const shareUrl = url.toString();
+  const handleOpenModelGuide = () => {
+    setIsModelModalOpen(true);
+  };
 
+  const handleShare = async (video) => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?video=${video.id}`;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        showToast(`'${video.title}' 영상 링크가 클립보드에 복사되었습니다!`);
-      }).catch(() => {
-        prompt('아래 링크를 복사하세요:', shareUrl);
-      });
-    } else {
-      prompt('아래 링크를 복사하세요:', shareUrl);
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast(`'${video.title}' 공유 링크가 복사되었습니다!`);
+        return;
+      } catch (e) {
+        console.warn('Clipboard write failed, fallback to prompt', e);
+      }
     }
+    window.prompt('영상 공유 링크입니다. 복사해서 사용하세요:', shareUrl);
   };
 
   const handleSaveVideo = (updatedVideo) => {
@@ -93,9 +110,9 @@ export default function App() {
       if (exists) {
         next = prev.map(v => {
           if (v.id === updatedVideo.id) {
-            return { ...v, ...updatedVideo };
+            return updatedVideo;
           }
-          // If the updated video is spotlight, remove spotlight from others
+          // If this is set as spotlight, ensure others are unset
           if (updatedVideo.isSpotlight && v.isSpotlight) {
             return { ...v, isSpotlight: false };
           }
@@ -137,6 +154,7 @@ export default function App() {
     if (confirm('모든 영상 데이터를 초기 기본 6개 템플릿으로 복원하시겠습니까? (수정하신 내용이 초기화됩니다)')) {
       setVideos(INITIAL_VIDEOS);
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('create_videos_list_v1');
       setIsManageModalOpen(false);
       showToast('초기 기본값으로 복원되었습니다.');
     }
@@ -193,7 +211,10 @@ export default function App() {
       <div className="top-line" aria-hidden="true" />
 
       {/* Header */}
-      <Header onOpenManage={handleOpenManageGeneral} />
+      <Header 
+        onOpenManage={handleOpenManageGeneral} 
+        onOpenModelGuide={handleOpenModelGuide}
+      />
 
       {/* Main Hero */}
       <main>
@@ -202,6 +223,7 @@ export default function App() {
           readyCount={readyCount}
           categoryCount={uniqueCategories}
           onOpenManage={handleOpenManageGeneral}
+          onOpenModelGuide={handleOpenModelGuide}
         />
 
         {/* Spotlight Video */}
@@ -228,7 +250,10 @@ export default function App() {
       <Footer />
 
       {/* Floating Guide Widget */}
-      <GuideFloatingWidget onOpenManage={handleOpenManageGeneral} />
+      <GuideFloatingWidget 
+        onOpenManage={handleOpenManageGeneral} 
+        onOpenModelGuide={handleOpenModelGuide}
+      />
 
       {/* Video Player Modal */}
       {selectedVideoForPlay && (
@@ -251,6 +276,12 @@ export default function App() {
         onDeleteVideo={handleDeleteVideo}
         onResetDefault={handleResetDefault}
         onExportVideos={handleExportVideos}
+      />
+
+      {/* CREATE 6단계 모형 안내 모달 */}
+      <CreateModelModal 
+        isOpen={isModelModalOpen}
+        onClose={() => setIsModelModalOpen(false)}
       />
     </div>
   );

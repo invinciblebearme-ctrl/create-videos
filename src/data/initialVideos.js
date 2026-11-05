@@ -13,7 +13,7 @@ export const INITIAL_VIDEOS = [
     categoryLabel: '연구학교 운영',
     color: 'pink',
     icon: '🎬',
-    description: 'CREATE 모형의 6단계(Connect, Recognize, Explore, Apply, Transform, Evaluate) 수업 철학과 1년간의 연구학교 실천 발자취를 집약한 공식 종합 홍보영상입니다. 교실 현장의 생생한 변화와 성과를 한눈에 확인하세요.',
+    description: 'CREATE 모형의 6단계(진단 Check & Context · 탐색 Research & Resource · 실행 Execution & Engage · 분석 Analysis & Action · 전이 Transfer & Think · 성장 Evolve & Evaluate) 수업 철학과 1년간의 연구학교 실천 발자취를 집약한 공식 종합 홍보영상입니다. 교실 현장의 생생한 변화와 성과를 한눈에 확인하세요.',
     tags: ['#연구학교', '#CREATE모형', '#미래교육', '#성과보고', '#공식영상'],
     youtubeUrl: '', // Ready for user to link YouTube URL
     duration: '05:20',
@@ -81,7 +81,7 @@ export const INITIAL_VIDEOS = [
     categoryLabel: '쇼츠/하이라이트',
     color: 'peach',
     icon: '📱',
-    description: 'Connect부터 Evaluate까지, CREATE 수업설계 6단계를 핵심만 쏙쏙 뽑아 1분 영상으로 알기 쉽게 정리한 숏폼 콘텐츠입니다.',
+    description: '진단(Check & Context)부터 성장(Evolve & Evaluate)까지, CREATE 수업설계 6단계(진단·탐색·실행·분석·전이·성장)와 분석(A) 단계의 환류 체계를 핵심만 쏙쏙 뽑아 1분 영상으로 알기 쉽게 정리한 숏폼 콘텐츠입니다.',
     tags: ['#Shorts', '#1분요약', '#수업설계꿀팁', '#CREATE6단계'],
     youtubeUrl: '',
     duration: '00:58',

@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowDown, Settings, ExternalLink, Play, Film, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowDown, Settings, ExternalLink, Play, Film, CheckCircle2, Sparkles, BookOpen } from 'lucide-react';
 
-export default function Hero({ totalCount, readyCount, categoryCount, onOpenManage }) {
+export default function Hero({ totalCount, readyCount, categoryCount, onOpenManage, onOpenModelGuide }) {
   const scrollToLibrary = () => {
     document.getElementById('video-library')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -23,13 +23,44 @@ export default function Hero({ totalCount, readyCount, categoryCount, onOpenMana
       </h1>
 
       <p className="hero-desc">
-        CREATE 모형(Connect · Recognize · Explore · Apply · Transform · Evaluate)을 적용한 수업 실천 현장,
+        CREATE 모형(진단 Check &amp; Context · 탐색 Research &amp; Resource · 실행 Execution &amp; Engage · 분석 Analysis &amp; Action · 전이 Transfer &amp; Think · 성장 Evolve &amp; Evaluate)을 적용한 수업 실천 현장,
         연구학교 운영 성과, 학생들의 배움과 성장을 담은 공식 홍보 영상 아카이브입니다.
       </p>
+
+      {/* CREATE 6단계 미니 프리뷰 바 */}
+      <div 
+        className="hero-model-chips" 
+        onClick={onOpenModelGuide} 
+        role="button" 
+        tabIndex={0} 
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpenModelGuide?.(); }}
+        title="CREATE 6단계 모형 정의 및 순차·환류 체계 자세히 보기"
+      >
+        <span className="model-chip-title">
+          <BookOpen size={13} style={{ display: 'inline', marginRight: 4 }} />
+          CREATE 6단계:
+        </span>
+        <span className="model-chip"><strong>C</strong> 진단</span>
+        <span className="model-chip-sep">›</span>
+        <span className="model-chip"><strong>R</strong> 탐색</span>
+        <span className="model-chip-sep">›</span>
+        <span className="model-chip"><strong>E</strong> 실행</span>
+        <span className="model-chip-sep">›</span>
+        <span className="model-chip hub"><strong>A</strong> 분석(환류)</span>
+        <span className="model-chip-sep">›</span>
+        <span className="model-chip"><strong>T</strong> 전이</span>
+        <span className="model-chip-sep">›</span>
+        <span className="model-chip"><strong>E</strong> 성장</span>
+        <span className="model-chip-more">한눈에 보기 ➔</span>
+      </div>
 
       <div className="hero-actions">
         <button className="btn-primary" onClick={scrollToLibrary}>
           <Film size={17} /> 영상 둘러보기 <ArrowDown size={15} />
+        </button>
+
+        <button className="btn-secondary" onClick={onOpenModelGuide}>
+          <BookOpen size={16} /> CREATE 모형 6단계 안내
         </button>
 
         <button className="btn-secondary" onClick={() => onOpenManage()}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { HelpCircle, X, Sparkles, Settings, Play, Youtube, Info, CheckCircle2 } from 'lucide-react';
+import { HelpCircle, X, Sparkles, Settings, Play, Youtube, Info, CheckCircle2, BookOpen } from 'lucide-react';
 
-export default function GuideFloatingWidget({ onOpenManage }) {
+export default function GuideFloatingWidget({ onOpenManage, onOpenModelGuide }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(true);
 
@@ -68,6 +68,38 @@ export default function GuideFloatingWidget({ onOpenManage }) {
           </div>
 
           <div className="guide-popover-body">
+            {/* CREATE 6단계 소개 FAQ */}
+            <div className="faq-item" style={{ background: '#f0f7ff', borderColor: '#bae6fd' }}>
+              <div className="faq-q" style={{ color: '#0369a1' }}>
+                <BookOpen size={15} color="#0284c7" /> CREATE 수업 설계 6단계란?
+              </div>
+              <div className="faq-a" style={{ color: '#334155' }}>
+                <strong>C</strong>(진단: Check &amp; Context) ➔ <strong>R</strong>(탐색: Research &amp; Resource) ➔ <strong>E</strong>(실행: Execution &amp; Engage) ➔ <strong>A</strong>(분석: Analysis &amp; Action) ➔ <strong>T</strong>(전이: Transfer &amp; Think) ➔ <strong>E</strong>(성장: Evolve &amp; Evaluate)의 6단계 및 분석(A) 단계 환류 체계입니다.
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenModelGuide?.();
+                  }}
+                  style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: 4, 
+                    marginTop: 8, 
+                    background: '#0284c7', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '5px 10px', 
+                    borderRadius: 6, 
+                    fontSize: 11.5, 
+                    fontWeight: 700, 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  <Sparkles size={12} /> 6단계 정의 &amp; 환류 체계도 보기
+                </button>
+              </div>
+            </div>
+
             <div className="faq-item">
               <div className="faq-q">
                 <Youtube size={15} color="#ef4444" /> 유튜브 링크는 어떻게 등록하나요?
