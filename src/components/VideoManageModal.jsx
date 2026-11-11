@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { X, Check, Trash2, Plus, Download, Upload, RotateCcw, Sparkles, ExternalLink, Film, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Check, Trash2, Plus, Download, Upload, RotateCcw, ExternalLink, AlertTriangle, Cloud, HelpCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { extractYouTubeId, getYouTubeThumbnail, isValidYouTubeUrl } from '../utils/youtube';
+import { extractYouTubeId, getYouTubeThumbnail } from '../utils/youtube';
 import { CATEGORIES } from '../data/initialVideos';
 
 export default function VideoManageModal({ 
   isOpen, 
   onClose, 
   videos, 
+  dbStatus,
   initialSelectedVideo, 
   onSaveVideo, 
   onDeleteVideo, 
@@ -16,6 +17,8 @@ export default function VideoManageModal({
   onExportVideos 
 }) {
   const [selectedId, setSelectedId] = useState(videos[0]?.id || '');
+  const [showDbGuide, setShowDbGuide] = useState(false);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
@@ -82,7 +85,9 @@ export default function VideoManageModal({
       .filter(Boolean)
       .map(t => t.startsWith('#') ? t : `#${t}`);
 
+    const current = videos.find(v => v.id === selectedId) || {};
     const updated = {
+      ...current,
       ...formData,
       id: selectedId,
       tags: tagsArray
@@ -124,8 +129,27 @@ export default function VideoManageModal({
     setSelectedId(newId);
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(String(event.target?.result || '[]'));
+        if (onImportVideos) {
+          onImportVideos(parsed);
+        }
+      } catch {
+        alert('JSON 파일을 읽는 중 오류가 발생했습니다.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   const currentParsedId = extractYouTubeId(formData.youtubeUrl);
   const currentPreviewThumb = currentParsedId ? getYouTubeThumbnail(currentParsedId, 'hq') : null;
+  const isCloudConnected = Boolean(dbStatus?.configured);
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
@@ -148,6 +172,66 @@ export default function VideoManageModal({
 
         {/* Modal Body */}
         <form onSubmit={handleSave} className="admin-modal-body">
+          {/* Cloudflare DB Status Banner */}
+          <div
+            style={{
+              background: isCloudConnected ? '#ecfdf5' : '#fffbeb',
+              border: `1px solid ${isCloudConnected ? '#a7f3d0' : '#fde68a'}`,
+              borderRadius: 10,
+              padding: '10px 14px',
+              marginBottom: 14,
+              fontSize: 12.5,
+              color: isCloudConnected ? '#065f46' : '#92400e'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800 }}>
+                <Cloud size={15} />
+                {isCloudConnected
+                  ? `Cloudflare ${dbStatus?.source === 'kv' ? 'KV' : 'D1'} 데이터베이스 연결됨 (전체 접속자 실시간 공유)`
+                  : '현재 로컬 브라우저 저장 모드 (Cloudflare D1 바인딩 연결 전)'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDbGuide(prev => !prev)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'inherit',
+                  fontSize: 11.5,
+                  fontWeight: 800,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3
+                }}
+              >
+                <HelpCircle size={13} />
+                {showDbGuide ? '안내 닫기' : 'Cloudflare DB 연결 방법'}
+              </button>
+            </div>
+
+            {showDbGuide && (
+              <div
+                style={{
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: `1px dashed ${isCloudConnected ? '#6ee7b7' : '#fcd34d'}`,
+                  fontSize: 12,
+                  lineHeight: 1.6
+                }}
+              >
+                <strong>Cloudflare 대시보드 1분 설정 방법 (SQL 실행 불필요 · 자동 생성):</strong>
+                <ol style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                  <li>Cloudflare 대시보드 → <strong>Storage &amp; Databases &gt; D1 SQL Database</strong>에서 데이터베이스 생성 (예: <code>create-videos-db</code>)</li>
+                  <li>Cloudflare <strong>Workers &amp; Pages &gt; 프로젝트 선택 &gt; Settings &gt; Bindings(또는 Functions)</strong> 이동</li>
+                  <li><strong>D1 database bindings</strong> 추가 → 변수 이름(Variable name)을 반드시 <code>DB</code>로 입력 후 저장 &amp; 재배포하면 즉시 연동됩니다!</li>
+                </ol>
+              </div>
+            )}
+          </div>
+
           {/* Slot Selector & Add New */}
           <div className="form-group">
             <div className="form-label">
@@ -347,7 +431,7 @@ export default function VideoManageModal({
 
           {/* Modal Footer */}
           <div className="admin-footer" style={{ margin: '10px -24px -24px', padding: '16px 24px' }}>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {videos.length > 1 && (
                 <button 
                   type="button" 
@@ -415,6 +499,34 @@ export default function VideoManageModal({
               >
                 <Download size={14} /> 백업 내보내기
               </button>
+
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #e2e8f0',
+                  color: '#64748b',
+                  borderRadius: 9,
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+                title="백업된 JSON 파일 불러오기"
+              >
+                <Upload size={14} /> 백업 불러오기
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>

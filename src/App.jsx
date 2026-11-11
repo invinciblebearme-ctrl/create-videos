@@ -8,37 +8,22 @@ import VideoManageModal from './components/VideoManageModal';
 import CreateModelModal from './components/CreateModelModal';
 import GuideFloatingWidget from './components/GuideFloatingWidget';
 import Footer from './components/Footer';
-import { INITIAL_VIDEOS, CATEGORIES } from './data/initialVideos';
-
-const STORAGE_KEY = 'create_videos_list_v2';
+import { INITIAL_VIDEOS } from './data/initialVideos';
+import {
+  STORAGE_KEY,
+  loadLocalVideos,
+  saveLocalVideos,
+  fetchVideosFromCloudflare,
+  saveVideosToCloudflare
+} from './utils/videoStorage';
 
 export default function App() {
-  const [videos, setVideos] = useState(() => {
-    try {
-      let saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
-        // Fallback check v1 and migrate
-        saved = localStorage.getItem('create_videos_list_v1');
-      }
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Automatically migrate any items containing the old Connect text
-          return parsed.map(v => {
-            if (v.id === 'create-promo-01' && v.description && v.description.includes('Connect')) {
-              return { ...v, description: INITIAL_VIDEOS[0].description };
-            }
-            if (v.id === 'create-shorts-05' && v.description && v.description.includes('Connect')) {
-              return { ...v, description: INITIAL_VIDEOS[4].description };
-            }
-            return v;
-          });
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load videos from localStorage', e);
-    }
-    return INITIAL_VIDEOS;
+  const [videos, setVideos] = useState(() => loadLocalVideos());
+  const [dbStatus, setDbStatus] = useState({
+    loading: true,
+    configured: false,
+    source: 'local',
+    syncing: false
   });
 
   const [selectedVideoForPlay, setSelectedVideoForPlay] = useState(null);
@@ -47,13 +32,36 @@ export default function App() {
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Persist to localStorage whenever videos change
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3200);
+  };
+
+  // Load from Cloudflare D1 / KV on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(videos));
-    } catch (e) {
-      console.error('Failed to save videos to localStorage', e);
-    }
+    let mounted = true;
+    (async () => {
+      const result = await fetchVideosFromCloudflare();
+      if (!mounted) return;
+
+      if (Array.isArray(result.videos) && result.videos.length > 0) {
+        setVideos(result.videos);
+      }
+      setDbStatus({
+        loading: false,
+        configured: Boolean(result.configured),
+        source: result.source || 'local',
+        syncing: false
+      });
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Persist to localStorage cache whenever videos change
+  useEffect(() => {
+    saveLocalVideos(videos);
   }, [videos]);
 
   // Deep linking: check URL search params for ?video=id
@@ -64,11 +72,27 @@ export default function App() {
       const match = videos.find(v => v.id === videoId);
       if (match) setSelectedVideoForPlay(match);
     }
-  }, []);
+  }, [videos]);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
+  const persistVideos = async (nextVideos, actionLabel = '영상 정보가') => {
+    setVideos(nextVideos);
+    setDbStatus(prev => ({ ...prev, syncing: true }));
+
+    const result = await saveVideosToCloudflare(nextVideos);
+    setDbStatus(prev => ({
+      ...prev,
+      configured: Boolean(result.configured),
+      source: result.configured ? (result.source || 'd1') : 'local',
+      syncing: false
+    }));
+
+    if (result.ok && result.configured) {
+      showToast(`☁️ ${actionLabel} Cloudflare DB에 저장되었습니다!`);
+    } else if (result.authRequired) {
+      showToast(`🔒 ${result.error || '관리자 인증이 필요합니다.'}`);
+    } else {
+      showToast(`💾 ${actionLabel} 저장되었습니다!`);
+    }
   };
 
   const handlePlay = (video) => {
@@ -103,61 +127,63 @@ export default function App() {
     window.prompt('영상 공유 링크입니다. 복사해서 사용하세요:', shareUrl);
   };
 
-  const handleSaveVideo = (updatedVideo) => {
-    setVideos(prev => {
-      const exists = prev.some(v => v.id === updatedVideo.id);
-      let next;
-      if (exists) {
-        next = prev.map(v => {
-          if (v.id === updatedVideo.id) {
-            return updatedVideo;
-          }
-          // If this is set as spotlight, ensure others are unset
-          if (updatedVideo.isSpotlight && v.isSpotlight) {
-            return { ...v, isSpotlight: false };
-          }
-          return v;
-        });
-      } else {
-        next = [...prev, updatedVideo];
-      }
-      return next;
-    });
+  const handleSaveVideo = async (updatedVideo) => {
+    const exists = videos.some(v => v.id === updatedVideo.id);
+    let nextVideos;
+    if (exists) {
+      nextVideos = videos.map(v => {
+        if (v.id === updatedVideo.id) {
+          return updatedVideo;
+        }
+        if (updatedVideo.isSpotlight && v.isSpotlight) {
+          return { ...v, isSpotlight: false };
+        }
+        return v;
+      });
+    } else {
+      nextVideos = [...videos, updatedVideo];
+    }
 
-    // If currently playing video was updated, update player modal
     if (selectedVideoForPlay && selectedVideoForPlay.id === updatedVideo.id) {
       setSelectedVideoForPlay(prev => ({ ...prev, ...updatedVideo }));
     }
 
-    showToast('영상 정보가 성공적으로 저장되었습니다!');
+    await persistVideos(nextVideos, '영상 정보가');
   };
 
-  const handleQuickSaveUrl = (videoId, url) => {
-    setVideos(prev => prev.map(v => {
+  const handleQuickSaveUrl = async (videoId, url) => {
+    const nextVideos = videos.map(v => {
       if (v.id === videoId) {
         return { ...v, youtubeUrl: url };
       }
       return v;
-    }));
+    });
     setSelectedVideoForPlay(prev => prev ? { ...prev, youtubeUrl: url } : null);
-    showToast('유튜브 영상이 즉시 연결되었습니다!');
+    await persistVideos(nextVideos, '유튜브 영상 주소가');
   };
 
-  const handleDeleteVideo = (id) => {
-    setVideos(prev => prev.filter(v => v.id !== id));
+  const handleDeleteVideo = async (id) => {
+    const nextVideos = videos.filter(v => v.id !== id);
     if (selectedVideoForPlay?.id === id) setSelectedVideoForPlay(null);
     setIsManageModalOpen(false);
-    showToast('영상이 삭제되었습니다.');
+    await persistVideos(nextVideos, '영상 삭제 내역이');
   };
 
-  const handleResetDefault = () => {
+  const handleResetDefault = async () => {
     if (confirm('모든 영상 데이터를 초기 기본 6개 템플릿으로 복원하시겠습니까? (수정하신 내용이 초기화됩니다)')) {
-      setVideos(INITIAL_VIDEOS);
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('create_videos_list_v1');
       setIsManageModalOpen(false);
-      showToast('초기 기본값으로 복원되었습니다.');
+      await persistVideos(INITIAL_VIDEOS, '초기 기본값이');
     }
+  };
+
+  const handleImportVideos = async (importedVideos) => {
+    if (!Array.isArray(importedVideos) || importedVideos.length === 0) {
+      alert('유효한 영상 목록 JSON 파일이 아닙니다.');
+      return;
+    }
+    await persistVideos(importedVideos, `백업 영상 ${importedVideos.length}개가`);
   };
 
   const handleExportVideos = () => {
@@ -271,10 +297,12 @@ export default function App() {
         isOpen={isManageModalOpen}
         onClose={() => setIsManageModalOpen(false)}
         videos={videos}
+        dbStatus={dbStatus}
         initialSelectedVideo={selectedVideoForEdit}
         onSaveVideo={handleSaveVideo}
         onDeleteVideo={handleDeleteVideo}
         onResetDefault={handleResetDefault}
+        onImportVideos={handleImportVideos}
         onExportVideos={handleExportVideos}
       />
 
