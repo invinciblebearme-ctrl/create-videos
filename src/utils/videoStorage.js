@@ -97,16 +97,14 @@ export async function fetchVideosFromCloudflare() {
       const data = await res.json();
 
       if (data && data.configured) {
-        // DB가 연결되어 있으나 아직 데이터가 비어있는 경우 초기 데이터를 DB에 자동 시드(Seed)
+        // DB가 연결되어 있으나 아직 저장된 데이터가 없는 초기 상태면 로컬(기본 템플릿) 데이터를 반환
         if (data.empty || !Array.isArray(data.videos) || data.videos.length === 0) {
-          const seedVideos = loadLocalVideos();
-          const seedResult = await saveVideosToCloudflare(seedVideos);
           return {
             ok: true,
             configured: true,
             source: data.source || 'd1',
-            seeded: seedResult.ok,
-            videos: seedVideos
+            empty: true,
+            videos: loadLocalVideos()
           };
         }
 
