@@ -14,7 +14,7 @@ export default function Hero({ totalCount, readyCount, categoryCount, onOpenMana
       <span className="floating-particle fp-4" aria-hidden="true">🏫</span>
 
       <div className="hero-eyebrow">
-        <Sparkles size={14} /> CREATE 모형 연구학교 공식 영상관
+        <Sparkles size={14} /> AI DIGITAL 연구학교 공식영상관
       </div>
 
       <h1 className="hero-title">
